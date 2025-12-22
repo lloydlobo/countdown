@@ -1,4 +1,8 @@
+import { useState } from "react"
+
+import { buttonVariants } from "@/components/ui/button"
 import { ComponentExample } from "@/components/component-example"
+import TimerCard from "@/components/timer-card"
 import { Button } from "@/components/ui/button"
 import type { Time, Timer } from "@/types/core"
 import { formatTime } from "@/utils"
@@ -6,8 +10,8 @@ import { useSuspenseQuery } from "@tanstack/react-query"
 import { Link, createFileRoute } from "@tanstack/react-router"
 import { get } from "idb-keyval"
 import { PlusIcon } from "lucide-react"
-import { useState } from "react"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -54,12 +58,7 @@ function Home() {
             </Link>
           </p>
         ) : (
-          data.map((timer) => (
-            <div key={timer.id} className="flex justify-between gap-8">
-              <p>{timer.name}</p>
-              <p>{timer.time ? formatTime(timer.time) : "--:--"}</p>
-            </div>
-          ))
+          data.map((timer) => <TimerCard timer={timer} key={timer.id} />)
         )}
       </div>
 

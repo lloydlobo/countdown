@@ -1,11 +1,13 @@
+import { useState } from "react"
+
 import NameInput from "@/components/routes/create/name-input"
 import TimePicker from "@/components/routes/create/time-picker"
+import ColorPicker, { existingColors } from "@/components/routes/create/color-picker"
 import { Button } from "@/components/ui/button"
-import type { Time } from "@/types/core"
+import type { Time, Timer } from "@/types/core"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { get, set } from "idb-keyval"
 import { ArrowLeftIcon } from "lucide-react"
-import { useState } from "react"
 import { toast } from "sonner"
 import { v4 as uuidv4 } from "uuid"
 
@@ -16,6 +18,7 @@ export const Route = createFileRoute("/create/")({
 function CreateTimer() {
   const [name, setName] = useState("")
   const [time, setTime] = useState<Time | undefined>(undefined)
+  const [color, setColor] = useState(existingColors[0])
 
   const navigate = useNavigate()
 
@@ -26,10 +29,11 @@ function CreateTimer() {
 
     const existingTimers = await get("timers") // idb-keyval
 
-    const newTimer = {
+    const newTimer: Timer = {
       id: uuidv4(),
       name,
       time,
+      color,
     }
 
     await set("timers", [...(existingTimers || []), newTimer]) // idb-keyval
@@ -57,6 +61,10 @@ function CreateTimer() {
 
       <div>
         <TimePicker selected={time} onChange={(time) => setTime(time)} />
+      </div>
+
+      <div>
+          <ColorPicker color={color} onChange={setColor} />
       </div>
 
       <Button onClick={createTimer}>

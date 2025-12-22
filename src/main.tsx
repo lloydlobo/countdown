@@ -1,13 +1,10 @@
-import { createRoot } from "react-dom/client"
-
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
-import { Router, RouterProvider } from "@tanstack/react-router"
-import ReactDOM from "react-dom/client"
-
-import { routeTree } from "@/routeTree.gen"
+import ReactDOM, { createRoot } from "react-dom/client"
 
 import { Toaster } from "@/components/ui/sonner"
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { Router, RouterProvider } from "@tanstack/react-router"
 
+import { routeTree } from "@/routeTree.gen"
 import "@/styles/globals.css"
 
 const queryClient = new QueryClient()
@@ -33,10 +30,10 @@ const rootElement = document.getElementById("root")
 if (rootElement && !rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
-      <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
-          <Toaster />
-      </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+      <Toaster />
+    </QueryClientProvider>
   )
 }
 
