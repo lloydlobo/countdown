@@ -1,6 +1,5 @@
 import { Label } from "@/components/ui/label"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { CheckmarkCircle02Icon, Tick02Icon } from "@hugeicons/core-free-icons"
+import {CheckIcon, PipetteIcon}from "lucide-react"
 
 type ColorPickerProps = {
     color: string
@@ -33,7 +32,7 @@ const ColorPicker = ({color, onChange}: ColorPickerProps) => {
                         onClick={()=>onChange(existingColor)}
                     >
                         {existingColor===color && (
-                            <HugeiconsIcon icon={Tick02Icon} strokeWidth={2} className="size-6 bg-black rounded-md text-white" />
+                            <CheckIcon className="size-6 bg-black rounded-md text-white" />
                         )}
                     </div>
                 ))}

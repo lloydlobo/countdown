@@ -24,7 +24,7 @@ const TimerCard = ({ timer }: TimerCardProps) => {
         <div className="w-full">
           <div>
             <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-sm" style={{ backgroundColor: timer?.color ?? "#3300aa" }}></div>
+              <div className="h-2 w-2 rounded-sm" style={{ backgroundColor: timer.color }}></div>
               <p className="text-lg font-semibold">{timer.name}</p>
             </div>
 

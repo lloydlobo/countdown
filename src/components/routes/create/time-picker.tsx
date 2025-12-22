@@ -4,10 +4,9 @@ import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import BaseTimePicker from "@/components/ui/time-picker"
 import { cn } from "@/lib/utils"
-import type { Time } from "@/types/core"
 import { formatTime } from "@/utils"
-import { StopWatchIcon } from "@hugeicons/core-free-icons"
-import { HugeiconsIcon } from "@hugeicons/react"
+import { TimerIcon } from "lucide-react"
+import type { Time } from "@/types/core"
 
 interface TimePickerProps {
   selected: Time | undefined
@@ -27,7 +26,7 @@ const TimePicker = ({ selected: time, onChange }: TimePickerProps) => {
             variant={"outline"}
             className={cn("w-full justify-start text-left font-normal", !time && "text-muted-foreground")}
           >
-            <HugeiconsIcon icon={StopWatchIcon} strokeWidth={2} className="mr-2 h-5 w-5" />
+            <TimerIcon className="mr-2 h-5 w-5" />
             {time && !isEmpty(time) ? formatTime(time) : <span>Pick a time</span>}
           </Button>
         </div>
