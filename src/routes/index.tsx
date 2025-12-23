@@ -6,12 +6,13 @@ import TimerCard from "@/components/timer-card"
 import { Button } from "@/components/ui/button"
 import type { Time, Timer } from "@/types/core"
 import { formatTime } from "@/utils"
-import { useSuspenseQuery } from "@tanstack/react-query"
+import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query"
 import { Link, createFileRoute } from "@tanstack/react-router"
 import { get } from "idb-keyval"
 import { PlusIcon } from "lucide-react"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { timersQueryOptions } from "@/queries/timers"
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -21,18 +22,7 @@ export const Route = createFileRoute("/")({
 })
 
 function Home() {
-  //   const { data } = useSuspenseQuery(timersQueryOptions)
-  const [data, setData] = useState<Timer[]>()
-
-  const getTimers = async () => {
-    const existingTimers: Timer[] = await get("timers")
-    const tempdata = existingTimers.map((x, i) => {
-      return `[${i}: ${x.name} ${x.time && formatTime(x.time)}]`
-    })
-
-    toast.info(tempdata.join("\n"))
-    setData(existingTimers)
-  }
+  const { data } = useSuspenseQuery(timersQueryOptions)
 
   return (
     <div className="flex min-h-[inherit] w-full flex-col justify-center overflow-y-auto py-20">
@@ -61,8 +51,7 @@ function Home() {
           data.map((timer) => <TimerCard timer={timer} key={timer.id} />)
         )}
       </div>
-
-      <Button onClick={getTimers}>Show existing timers</Button>
+      {/* <Button onClick={getTimers}>Show existing timers</Button> */}
     </div>
   )
 }

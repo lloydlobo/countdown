@@ -1,24 +1,26 @@
-// https://github.com/TanStack/router/blob/main/examples/react/quickstart-file-based/src/routes/__root.tsx
-import * as React from "react"
 import { StrictMode } from "react"
 
+import GlobalTimer from "@/components/global-timer"
 import { ThemeProvider } from "@/components/theme-provider"
 import { GITHUB_URL } from "@/constants"
+import { GlobalTimerProvider } from "@/context/global-timer-context"
 import { QueryClient } from "@tanstack/react-query"
-import { Link, Outlet, createRootRoute, rootRouteWithContext } from "@tanstack/react-router"
+import { Outlet, createRootRouteWithContext } from "@tanstack/react-router"
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
 
-export const Route = rootRouteWithContext<{
+type RouterContext = {
   queryClient: QueryClient
-}>()({
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootComponent,
 })
 
 function RootComponent() {
   return (
-    <>
-      <StrictMode>
-        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+    <StrictMode>
+      <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+        <GlobalTimerProvider>
           <div className="container">
             <div className="min-h-[calc(100vh-var(--footer-height))]">
               <Outlet />
@@ -32,10 +34,15 @@ function RootComponent() {
                 </a>
               </span>
             </div>
+
+            <GlobalTimer />
           </div>
-        </ThemeProvider>
-        <TanStackRouterDevtools position="bottom-right" />
-      </StrictMode>
-    </>
+        </GlobalTimerProvider>
+      </ThemeProvider>
+
+      <TanStackRouterDevtools position="bottom-right" />
+    </StrictMode>
   )
 }
+
+// https://github.com/TanStack/router/blob/main/examples/react/quickstart-file-based/src/routes/__root.tsx

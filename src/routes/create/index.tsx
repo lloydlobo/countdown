@@ -64,7 +64,7 @@ function CreateTimer() {
       </div>
 
       <div>
-          <ColorPicker color={color} onChange={setColor} />
+        <ColorPicker color={color} onChange={setColor} />
       </div>
 
       <Button onClick={createTimer}>

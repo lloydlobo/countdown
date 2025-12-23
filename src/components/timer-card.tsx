@@ -15,12 +15,12 @@ const TimerCard = ({ timer }: TimerCardProps) => {
       className={cn(
         buttonVariants({
           // use h-auto to override `h-9` in buttonVariants
-          className: "flex w-full items-center justify-between rounded-md h-auto px-4 py-3",
+          className: "flex h-auto w-full items-center justify-between rounded-md px-4 py-3",
           variant: "secondary",
-        }),
+        })
       )}
     >
-      <Link className="block w-full" to="/$timerCard" params={{ timerId: timer.id }}>
+      <Link className="block w-full" to="/$timerId" params={{ timerId: timer.id }}>
         <div className="w-full">
           <div>
             <div className="flex items-center gap-2">
