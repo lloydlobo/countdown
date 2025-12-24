@@ -19,4 +19,5 @@ export default defineConfig({
                 "@": path.resolve(__dirname, "./src"),
             },
         },
+        base: "/countdown/", // GITHUB repo to deploy via gh-pages as GitHub pages
 })
