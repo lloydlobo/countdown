@@ -1,12 +1,22 @@
-import GlobalTimer, { portalNode } from "@/components/global-timer"
+import { useEffect } from "react"
+
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { createFileRoute, Link } from "@tanstack/react-router"
+import * as portals from "react-reverse-portal"
+
+import { portalNode } from "@/components/global-timer"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useGlobalTimer } from "@/context/global-timer-context"
 import { timerQueryOptions } from "@/queries/timer"
 import type { Timer } from "@/types/core"
-import { useSuspenseQuery } from "@tanstack/react-query"
-import { createFileRoute, Link } from "@tanstack/react-router"
-import { useEffect } from "react"
-import * as portals from "react-reverse-portal"
 
 export const Route = createFileRoute("/$timerId/")({
   component: TimerPage,
@@ -56,14 +66,53 @@ function TimerPage() {
   return (
     <>
       {shouldAsk && (
-        <div>
-          <span>TODO: Dialog</span>
-          <span>TODO: DialogDescription: You are about to open a new timer. The old timer will be paused</span>
-          <span className="flex gap-2 opacity-15">
-            In <pre>routes/$timerId/index.tsx</pre>: <pre>{timerId}</pre>
-          </span>
-        </div>
+        <Dialog open>
+          <DialogContent className="sm:max-w-106.25">
+            <DialogHeader>
+              <DialogTitle>Open new timer?</DialogTitle>
+              <DialogDescription>You are about to open a new timer. The old timer will be paused.</DialogDescription>
+            </DialogHeader>
+
+            <div>
+              <p>
+                Current timer:{" "}
+                <span
+                  className="mr-1 inline-block h-2 w-2 rounded-md"
+                  style={{ backgroundColor: existingTimer?.color }}
+                ></span>
+                <span className="font-semibold" style={{ color: existingTimer?.color }}>
+                  {existingTimer?.name}
+                </span>
+              </p>
+
+              <p>
+                New timer:{" "}
+                <span className="mr-1 inline-block h-2 w-2 rounded-md" style={{ backgroundColor: timer?.color }}></span>
+                <span className="font-semibold" style={{ color: timer?.color }}>
+                  {timer?.name}
+                </span>
+              </p>
+            </div>
+
+            <DialogFooter>
+              <Link to="/$timerId" params={{ timerId: existingTimer!.id }}>
+                <Button variant={"secondary"}>Open the current timer</Button>
+              </Link>
+
+              <Button
+                onClick={() => {
+                  if (!timer) return
+
+                  setTimer(timer)
+                }}
+              >
+                Open the new timer
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       )}
+
       <portals.OutPortal isMinimized={false} node={portalNode} />
     </>
   )

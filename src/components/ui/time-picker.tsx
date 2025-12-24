@@ -13,9 +13,9 @@ export interface TimePickerProps extends Omit<React.HTMLAttributes<HTMLDivElemen
 const TimePicker = ({ selected, onChange, className, ...props }: TimePickerProps) => {
   const [time, setTime] = useState<Time>({ hours: 0, minutes: 0, seconds: 0 })
 
-  const handleChange = (time_: Partial<Time>) => {
-    setTime(time_)
-    onChange(time_)
+  const handleChange = (t: Partial<Time>) => {
+    setTime(t)
+    onChange(t)
   }
 
   return (

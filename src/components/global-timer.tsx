@@ -1,11 +1,14 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
-import * as portals from "react-reverse-portal"
-import { Button } from "@/components/ui/button"
-import { Link, useRouter } from "@tanstack/react-router"
-import { ArrowLeftIcon } from "lucide-react"
+import { Button, buttonVariants } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useGlobalTimer } from "@/context/global-timer-context"
+import { cn } from "@/lib/utils"
 import type { Timer } from "@/types/core"
+import { Link, useRouter } from "@tanstack/react-router"
+import { ArrowLeftIcon, PauseIcon, PencilIcon, PlayIcon, TimerResetIcon } from "lucide-react"
+import * as portals from "react-reverse-portal"
+import { toast } from "sonner"
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const portalNode = portals.createHtmlPortalNode<typeof TimerComponent>({
@@ -14,6 +17,12 @@ export const portalNode = portals.createHtmlPortalNode<typeof TimerComponent>({
   },
 })
 
+type TimerComponentProps = {
+  timer: Timer
+  isMinimized?: boolean
+  onRun: (isRunning: boolean) => void
+}
+
 const GlobalTimer = () => {
   const router = useRouter()
 
@@ -21,7 +30,6 @@ const GlobalTimer = () => {
     // @ts-expect-error matchRoute expect params, which is not needed here
     !!router.matchRoute({ to: "/$timerId" })
   )
-
   const { timer, setIsRunning } = useGlobalTimer()
 
   useEffect(() => {
@@ -45,26 +53,55 @@ const GlobalTimer = () => {
 
   return (
     <>
-      <div className="flex gap-0">
-        <span>Global</span> <span>Timer</span>
-      </div>
       <portals.InPortal node={portalNode}>
         {timer && <TimerComponent timer={timer} onRun={setIsRunning} />}
       </portals.InPortal>
 
-      {!isMatch && <portals.OutPortal<typeof TimerComponent> isMinimized={true} node={portalNode} />}
+      {!isMatch && (
+        <portals.OutPortal<typeof TimerComponent> // force-line-break
+          isMinimized={true}
+          node={portalNode}
+        />
+      )}
     </>
   )
 }
 
-type TimerComponentProps = {
-  timer: Timer | null
-  isMinimized?: boolean
-  onRun: (isRunning: boolean) => void
-}
-
 export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerComponentProps) => {
-  if (!timer) {
+  //   const [time, setTime] = useState(timer.time)
+  const [isRunning, setisRunning] = useState(false)
+  const { isAudioPlaying, setIsAudioPlaying } = useState(false)
+  //   const { setTimer } = useGlobalTimer()
+
+  //   const countDownInterval=useRef<NodeJS.Timeout>()
+
+  const playAudio = () => {
+    toast.info(<span>DEBUG: playAudio()</span>)
+  }
+  const pauseAudio = () => {
+    toast.info(<span>DEBUG: pauseAudio()</span>)
+  }
+  const deleteTimer = () => {
+    toast.info(<span>DEBUG: deleteAudio()</span>)
+  }
+  const setAudioSrc = () => {
+    toast.info(<span>DEBUG: setAudioSrc()</span>)
+  }
+  const startTimer = () => {
+    toast.info(<span>DEBUG: startTimer()</span>)
+  }
+  const pauseTimer = () => {
+    toast.info(<span>DEBUG: pauseTimer()</span>)
+  }
+  const resetTimer = () => {
+    toast.info(<span>DEBUG: resetTimer()</span>)
+  }
+
+  useEffect(() => {}, [timer.time])
+  useEffect(() => {}, [isRunning, onRun])
+  useEffect(() => {}, [])
+
+  if (isMinimized) {
     return (
       <>
         <div className="flex">
@@ -73,43 +110,111 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
       </>
     )
   }
+
   return (
     <div className="relative flex h-full min-h-[inherit] w-full flex-col items-center justify-center py-20">
       <Link to="/">
         <Button variant="ghost" className="absolute top-4 left-4 flex items-center md:top-16 md:left-4">
           <ArrowLeftIcon className="mr-2 h-6 w-6 shrink-8" />
+
           <p className="text-xl">Go back</p>
         </Button>
       </Link>
-
       <div className="flex items-center gap-1.5">
         <div className="h-2 w-2 rounded-sm" style={{ backgroundColor: timer.color }}></div>
         <p className="text-xl font-semibold" style={{ color: timer.color }}>
-          {timer?.name}
+          {timer.name}
         </p>
       </div>
 
       <div className="flex flex-col md:flex-row md:items-center md:gap-2">
         <p className="text-8xl font-bold uppercase tabular-nums md:text-9xl">
-          {timer.hours || "00"}
-          {/* {timer.hours.toString().padStart(2, "0")} */}
+          {timer.time.hours.toString().padStart(2, "0")}
         </p>
 
         <p className="hidden text-8xl font-bold uppercase tabular-nums md:block md:text-9xl">:</p>
         <p className="-mt-14 text-8xl font-bold uppercase tabular-nums md:-mt-20 md:hidden md:text-9xl">..</p>
 
         <p className="text-8xl font-bold uppercase tabular-nums md:text-9xl">
-          {timer.minutes || "00"}
-          {/* {timer.minutes.toString().padStart(2, "0")} */}
+          {timer.time.minutes.toString().padStart(2, "0")}
         </p>
 
         <p className="hidden text-8xl font-bold uppercase tabular-nums md:block md:text-9xl">:</p>
         <p className="-mt-14 text-8xl font-bold uppercase tabular-nums md:-mt-20 md:hidden md:text-9xl">..</p>
 
         <p className="text-8xl font-bold uppercase tabular-nums md:text-9xl">
-          {timer.seconds || "00"}
-          {/* {timer.seconds.toString().padStart(2, "0")} */}
+          {timer.time.seconds.toString().padStart(2, "0")}
         </p>
+      </div>
+
+      <div className="mt-8 flex flex-col gap-2 md:flex-row">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger onClick={() => (isRunning ? pauseTimer : startTimer)()}>
+              <div className="flex items-center">
+                {isRunning ? (
+                  <>
+                    <PauseIcon className="mr-3 h-5 w-5" />
+                    <p className="text-base font-semibold uppercase">Pause</p>
+                  </>
+                ) : (
+                  <>
+                    <PlayIcon className="mr-3 h-5 w-5" />
+                    <p className="text-base font-semibold uppercase">Start</p>
+                  </>
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent className="bg-secondary">
+              {isRunning ? "Pause the timer" : "Start the timer"}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+
+        <div className="flex items-center gap-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                className={cn(buttonVariants({ variant: "secondary", className: "grow py-4" }))}
+                onClick={resetTimer}
+              >
+                <TimerResetIcon className="h-5 w-5" />
+              </TooltipTrigger>
+              <TooltipContent className="bg-secondary">Reset the timer</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <Link to="/$timerId/edit" params={{ timerId: timer.id }} className="block">
+            <TooltipProvider>
+              <Tooltip>
+                {/* NOTE: Disabled h-full for even icon for all providers */}
+                <TooltipTrigger
+                  className={cn(buttonVariants({ variant: "secondary", className: "h-full~ grow py-4" }))}
+                >
+                  <PencilIcon className="h-5 w-5" />
+                </TooltipTrigger>
+                <TooltipContent className="bg-secondary">Edit the timer</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </Link>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger
+                onClick={() => {
+                  setAudioSrc()
+                  isAudioPlaying ? pauseAudio() : playAudio()
+                }}
+                className={cn(buttonVariants({ variant: "destructive", className: "grow py-4" }))}
+              >
+                {isAudioPlaying ? <PauseIcon className="h-5 w-5" /> : <PlayIcon className="h-5 w-5" />}
+              </TooltipTrigger>
+              <TooltipContent className="bg-secondary">
+                {isAudioPlaying ? "Pause the sound" : "Play the sound"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
     </div>
   )

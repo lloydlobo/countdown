@@ -9,3 +9,7 @@ export function formatTime(time: Time) {
   result += `${minutes}:${seconds}`
   return result
 }
+
+export function isTimeEmpty(time: Time) {
+  return time.hours === 0 && time.minutes === 0 && time.seconds === 0
+}
