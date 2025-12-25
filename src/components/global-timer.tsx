@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { useGlobalTimer } from "@/context/global-timer-context"
 import { cn } from "@/lib/utils"
 import type { Time, Timer } from "@/types/core"
+import { isTimeEmpty } from "@/utils"
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const portalNode = portals.createHtmlPortalNode<typeof TimerComponent>({
@@ -17,10 +18,17 @@ export const portalNode = portals.createHtmlPortalNode<typeof TimerComponent>({
     class: "w-full h-full min-h-[inherit]",
   },
 })
-
 type TimerComponentProps = {
   timer: Timer
   isMinimized?: boolean
+  // 1. Callback Registration: The onRun prop is passed to TimerComponent and called whenever the timer's running state changes (line 220).
+  // 2. State Synchronization: When isRunning state changes, onRun?.(isRunning) is called to notify the parent component about the timer's running status.
+  // 3. Parent Component Control: In the GlobalTimer component (line 52), setIsRunning from the global timer context is passed as onRun, allowing the context to track when the timer is running.
+  // 4. Context Integration: This creates a two-way binding where:
+  //    - The timer component controls its own running state
+  //    - The global timer context is notified of running state changes
+  //    - The context can potentially influence timer behavior based on this information
+  // The onRun callback essentially allows the global timer context to stay synchronized with the individual timer's running state, which could be used for features like preventing multiple timers from running simultaneously or providing global timer controls.
   onRun: (isRunning: boolean) => void
 }
 
@@ -38,8 +46,7 @@ const GlobalTimer = () => {
       const href = ev.toLocation.href
       const id = timer?.id
 
-      const label = `GlobalTimer: router.subscribe: "onResolved":`
-      console.log(label, "resolved", id, href)
+      console.trace("resolved", id, href)
 
       setIsMatch(href === `/${id}`)
     })
@@ -68,13 +75,39 @@ const GlobalTimer = () => {
   )
 }
 
+const TimeDisplay = ({ time }: { time: Time }) => {
+const TimeColon = () => <p className="text-6xl font-bold uppercase tabular-nums md:block md:text-9xl">:</p>
+const TimeChars = ({ children }: { children: React.ReactNode }) => (
+  <p className="text-6xl font-bold uppercase tabular-nums md:text-9xl">{children}</p>
+)
+return (
+  <div className="flex md:flex-row md:items-center md:gap-2">
+    <TimeChars>{time.hours.toString().padStart(2, "0")}</TimeChars>
+    <TimeColon />
+    <TimeChars>{time.minutes.toString().padStart(2, "0")}</TimeChars>
+    <TimeColon />
+    <TimeChars>{time.seconds.toString().padStart(2, "0")}</TimeChars>
+  </div>
+)
+}
+
+// The timer ticks using a setInterval in the startTimer function at line 157. Here's how it works:
+// 1. Interval Setup: When startTimer() is called, it creates a setInterval that runs every 1000ms (1 second) at line 157.
+// 2. Time Decrement Logic: The interval callback (lines 158-199) decrements the time in this order:
+//    - If seconds > 0: decrement seconds by 1
+//    - If seconds = 0 and minutes > 0: decrement minutes by 1, set seconds to 59
+//    - If minutes = 0 and hours > 0: decrement hours by 1, set minutes to 59, seconds to 59
+//    - If all reach 0: timer completes
+// 3. Timer Completion: When time reaches 00:00:00, it plays audio and handles different timer modes (one-time, interval, or normal).
+// 4. Interval Cleanup: The pauseTimer() function at line 202 clears the interval using clearInterval(countDownInterval.current!).
+// The timer state is managed with useState for the current time and useRef to store the interval reference for proper cleanup.
 export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerComponentProps) => {
-  //   const [time, setTime] = useState(timer.time)
-  const [isRunning, setisRunning] = useState(false)
+  const [time, setTime] = useState(timer.time)
+  const [isRunning, setIsRunning] = useState(false)
   const { isAudioPlaying, setIsAudioPlaying } = useState(false)
   //   const { setTimer } = useGlobalTimer()
 
-  //   const countDownInterval=useRef<NodeJS.Timeout>()
+  const countdownInterval = useRef<NodeJS.Timeout>()
 
   const playAudio = () => {
     toast.info(<span>DEBUG: playAudio()</span>)
@@ -88,19 +121,52 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
   const setAudioSrc = () => {
     toast.info(<span>DEBUG: setAudioSrc()</span>)
   }
+
   const startTimer = () => {
-    toast.info(<span>DEBUG: startTimer()</span>)
-  }
-  const pauseTimer = () => {
-    toast.info(<span>DEBUG: pauseTimer()</span>)
-  }
-  const resetTimer = () => {
-    toast.info(<span>DEBUG: resetTimer()</span>)
+    console.assert(!isRunning)
+
+    if (isTimeEmpty(time)) setTime(timer.time)
+    setIsRunning(true)
+    countdownInterval.current=setInterval(()=>{
+        setTime((prev)=>{
+            if (prev.seconds>0){
+                return {...prev,seconds:prev.seconds-1}
+            } else if (prev.minutes>0){
+                return {...prev, minutes:prev.minutes-1,seconds:59}
+            } else if (prev.hours > 0) {
+                return {...prev,hours:prev.hours-1, minutes:59, seconds: 59,}
+            } else {
+                pauseTimer()
+                return prev
+            }
+        })
+    },1000)
   }
 
-  useEffect(() => {}, [timer.time])
-  useEffect(() => {}, [isRunning, onRun])
-  useEffect(() => {}, [])
+  const pauseTimer = () => {
+    console.assert(!isTimeEmpty(time))
+
+    setIsRunning(false)
+    clearInterval(countdownInterval.current!)
+  }
+
+  const resetTimer = () => {
+      setTime(timer.time)
+      pauseTimer()
+  }
+
+  useEffect(() => {
+      setTime(timer.time)
+      pauseTimer()
+  }, [timer.time])
+
+  useEffect(() => {
+      onRun?.(isRunning)
+  }, [isRunning, onRun])
+
+  useEffect(() => {
+      // TODO: for audioRef
+  }, [])
 
   if (isMinimized) {
     return (
@@ -111,22 +177,6 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
           </p>
         </div>
       </>
-    )
-  }
-
-  const TimeDisplay = ({ time }: { time: Time }) => {
-    const TimeColon = () => <p className="text-6xl font-bold uppercase tabular-nums md:block md:text-9xl">:</p>
-    const TimeChars = ({ children }: { children: React.ReactNode }) => (
-      <p className="text-6xl font-bold uppercase tabular-nums md:text-9xl">{children}</p>
-    )
-    return (
-      <div className="flex md:flex-row md:items-center md:gap-2">
-        <TimeChars>{time.hours.toString().padStart(2, "0")}</TimeChars>
-        <TimeColon />
-        <TimeChars>{time.minutes.toString().padStart(2, "0")}</TimeChars>
-        <TimeColon />
-        <TimeChars>{time.seconds.toString().padStart(2, "0")}</TimeChars>
-      </div>
     )
   }
 

@@ -17,8 +17,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 })
 
 function RootComponent() {
-  return (
-    <StrictMode>
+  const Component = () => (
+    <>
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <GlobalTimerProvider>
           <div className="container">
@@ -41,6 +41,14 @@ function RootComponent() {
       </ThemeProvider>
 
       <TanStackRouterDevtools position="bottom-right" />
+    </>
+  )
+
+  return true ? (
+    <Component />
+  ) : (
+    <StrictMode>
+      <Component />
     </StrictMode>
   )
 }
