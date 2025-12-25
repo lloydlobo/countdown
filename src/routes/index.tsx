@@ -1,24 +1,16 @@
-import { useState } from "react"
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { Link, createFileRoute } from "@tanstack/react-router"
+import { PlusIcon } from "lucide-react"
 
-import { buttonVariants } from "@/components/ui/button"
-import { ComponentExample } from "@/components/component-example"
 import TimerCard from "@/components/timer-card"
 import { Button } from "@/components/ui/button"
-import type { Time, Timer } from "@/types/core"
-import { formatTime } from "@/utils"
-import { useSuspenseQueries, useSuspenseQuery } from "@tanstack/react-query"
-import { Link, createFileRoute } from "@tanstack/react-router"
-import { get } from "idb-keyval"
-import { PlusIcon } from "lucide-react"
-import { toast } from "sonner"
-import { cn } from "@/lib/utils"
 import { timersQueryOptions } from "@/queries/timers"
 
 export const Route = createFileRoute("/")({
   component: Home,
-  // loader: async ({ context }) => {
-  //     return context.queryClient.ensureQueryData(timersQueryOptions)
-  // },
+  loader: async ({ context }) => {
+    return context.queryClient.ensureQueryData(timersQueryOptions)
+  },
 })
 
 function Home() {
@@ -32,8 +24,6 @@ function Home() {
         <Link to="/create">
           <Button variant="secondary">
             <PlusIcon className="mr-2 h-6 w-6" />
-
-            {/*<p className="ml-2 hidden text-base~ text-lg sm:block">Add timer</p>*/}
             <p className="text-base~ hidden text-lg sm:block">Add timer</p>
           </Button>
         </Link>
@@ -51,7 +41,6 @@ function Home() {
           data.map((timer) => <TimerCard timer={timer} key={timer.id} />)
         )}
       </div>
-      {/* <Button onClick={getTimers}>Show existing timers</Button> */}
     </div>
   )
 }

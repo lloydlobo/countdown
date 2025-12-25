@@ -1,9 +1,10 @@
+import { Link } from "@tanstack/react-router"
+import { Pencil, TrashIcon } from "lucide-react"
+
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import type { Timer } from "@/types/core"
 import { formatTime } from "@/utils"
-import { Link } from "@tanstack/react-router"
-import { Pencil, TrashIcon } from "lucide-react"
 
 interface TimerCardProps {
   timer: Timer
@@ -14,8 +15,7 @@ const TimerCard = ({ timer }: TimerCardProps) => {
     <div
       className={cn(
         buttonVariants({
-          // use h-auto to override `h-9` in buttonVariants
-          className: "flex h-auto w-full items-center justify-between rounded-md px-4 py-3",
+          className: "flex h-auto w-full items-center justify-between rounded-md px-4 py-3", // use h-auto to override `h-9` in buttonVariants
           variant: "secondary",
         })
       )}

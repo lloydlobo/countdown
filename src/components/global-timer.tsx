@@ -1,14 +1,15 @@
-import { useEffect, useRef, useState } from "react"
+import React, { useEffect, useRef, useState } from "react"
+
+import { Link, useRouter } from "@tanstack/react-router"
+import { ArrowLeftIcon, PauseIcon, PencilIcon, PlayIcon, TimerResetIcon } from "lucide-react"
+import * as portals from "react-reverse-portal"
+import { toast } from "sonner"
 
 import { Button, buttonVariants } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useGlobalTimer } from "@/context/global-timer-context"
 import { cn } from "@/lib/utils"
-import type { Timer } from "@/types/core"
-import { Link, useRouter } from "@tanstack/react-router"
-import { ArrowLeftIcon, PauseIcon, PencilIcon, PlayIcon, TimerResetIcon } from "lucide-react"
-import * as portals from "react-reverse-portal"
-import { toast } from "sonner"
+import type { Time, Timer } from "@/types/core"
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const portalNode = portals.createHtmlPortalNode<typeof TimerComponent>({
@@ -105,9 +106,27 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
     return (
       <>
         <div className="flex">
-          <p>Timer not found</p>
+          <p>
+            <pre>[TimerComponent] isMinimized: {isMinimized ? "true" : "false"}</pre>
+          </p>
         </div>
       </>
+    )
+  }
+
+  const TimeDisplay = ({ time }: { time: Time }) => {
+    const TimeColon = () => <p className="text-6xl font-bold uppercase tabular-nums md:block md:text-9xl">:</p>
+    const TimeChars = ({ children }: { children: React.ReactNode }) => (
+      <p className="text-6xl font-bold uppercase tabular-nums md:text-9xl">{children}</p>
+    )
+    return (
+      <div className="flex md:flex-row md:items-center md:gap-2">
+        <TimeChars>{time.hours.toString().padStart(2, "0")}</TimeChars>
+        <TimeColon />
+        <TimeChars>{time.minutes.toString().padStart(2, "0")}</TimeChars>
+        <TimeColon />
+        <TimeChars>{time.seconds.toString().padStart(2, "0")}</TimeChars>
+      </div>
     )
   }
 
@@ -127,39 +146,26 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
         </p>
       </div>
 
-      <div className="flex flex-col md:flex-row md:items-center md:gap-2">
-        <p className="text-8xl font-bold uppercase tabular-nums md:text-9xl">
-          {timer.time.hours.toString().padStart(2, "0")}
-        </p>
-
-        <p className="hidden text-8xl font-bold uppercase tabular-nums md:block md:text-9xl">:</p>
-        <p className="-mt-14 text-8xl font-bold uppercase tabular-nums md:-mt-20 md:hidden md:text-9xl">..</p>
-
-        <p className="text-8xl font-bold uppercase tabular-nums md:text-9xl">
-          {timer.time.minutes.toString().padStart(2, "0")}
-        </p>
-
-        <p className="hidden text-8xl font-bold uppercase tabular-nums md:block md:text-9xl">:</p>
-        <p className="-mt-14 text-8xl font-bold uppercase tabular-nums md:-mt-20 md:hidden md:text-9xl">..</p>
-
-        <p className="text-8xl font-bold uppercase tabular-nums md:text-9xl">
-          {timer.time.seconds.toString().padStart(2, "0")}
-        </p>
-      </div>
+      <TimeDisplay time={timer.time} />
 
       <div className="mt-8 flex flex-col gap-2 md:flex-row">
         <TooltipProvider>
           <Tooltip>
-            <TooltipTrigger onClick={() => (isRunning ? pauseTimer : startTimer)()}>
+            <TooltipTrigger
+              onClick={() => (isRunning ? pauseTimer : startTimer)()}
+              className={cn(buttonVariants({ className: "py-4", variant: "default" }))}
+            >
               <div className="flex items-center">
                 {isRunning ? (
                   <>
                     <PauseIcon className="mr-3 h-5 w-5" />
+
                     <p className="text-base font-semibold uppercase">Pause</p>
                   </>
                 ) : (
                   <>
                     <PlayIcon className="mr-3 h-5 w-5" />
+
                     <p className="text-base font-semibold uppercase">Start</p>
                   </>
                 )}
