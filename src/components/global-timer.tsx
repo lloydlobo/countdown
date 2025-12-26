@@ -8,7 +8,7 @@ import type { Timer } from "@/types/core"
 import { isTimeEmpty } from "@/utils"
 import { useQueryClient } from "@tanstack/react-query"
 
-import { Link, useRouter } from "@tanstack/react-router"
+import { Link, useNavigate, useRouter } from "@tanstack/react-router"
 import { ArrowLeftIcon, MaximizeIcon, PauseIcon, PencilIcon, PlayIcon, TimerResetIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import * as portals from "react-reverse-portal"
@@ -21,14 +21,6 @@ export const portalNode = portals.createHtmlPortalNode<typeof TimerComponent>({
   },
 })
 
-// 1. Callback Registration: The onRun prop is passed to TimerComponent and called whenever the timer's running state changes (line 220).
-// 2. State Synchronization: When isRunning state changes, onRun?.(isRunning) is called to notify the parent component about the timer's running status.
-// 3. Parent Component Control: In the GlobalTimer component (line 52), setIsRunning from the global timer context is passed as onRun, allowing the context to track when the timer is running.
-// 4. Context Integration: This creates a two-way binding where:
-//    - The timer component controls its own running state
-//    - The global timer context is notified of running state changes
-//    - The context can potentially influence timer behavior based on this information
-// The onRun callback essentially allows the global timer context to stay synchronized with the individual timer's running state, which could be used for features like preventing multiple timers from running simultaneously or providing global timer controls.
 type TimerComponentProps = {
   timer: Timer
   isMinimized?: boolean
@@ -38,76 +30,66 @@ type TimerComponentProps = {
 const GlobalTimer = () => {
   const router = useRouter()
 
-  const [isMatch, setIsMatch] = useState(
-    // @ts-expect-error matchRoute expect params, which is not needed here
-    !!router.matchRoute({ to: "/$timerId" })
-  )
+  // @ts-expect-error matchRoute expect params, which is not needed here
+  const [isMatch, setIsMatch] = useState(!!router.matchRoute({ to: "/$timerId" }))
   const { timer, setIsRunning } = useGlobalTimer()
 
   useEffect(() => {
-    const unsub = router.subscribe("onResolved", (ev) => {
+    return router.subscribe("onResolved", (ev) => {
       const href = ev.toLocation.href
       const id = timer?.id
-      console.trace("resolved", id, href)
 
+      console.log("resolved", id, href)
       setIsMatch(href === `/${id}`)
-    })
-    return unsub
+    }) // returns an unsubscribe function
   }, [timer, router])
 
   useEffect(() => {
     // @ts-expect-error matchRoute expect params, which is not needed here
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsMatch(!!router.matchRoute({ to: "/$timerId" }))
   }, [router, timer?.id])
 
+  // FIX: on delete timer by id, the minimized timer remains even if timer doesn't exist
   return (
     <>
       <portals.InPortal node={portalNode}>
         {timer && <TimerComponent timer={timer} onRun={setIsRunning} />}
       </portals.InPortal>
-
-      {!isMatch && (
-        <portals.OutPortal<typeof TimerComponent> // force-line-break
-          isMinimized={true}
-          node={portalNode}
-        />
-      )}
+      {!isMatch && <portals.OutPortal<typeof TimerComponent> isMinimized={true} node={portalNode} />}
     </>
   )
 }
 
 export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerComponentProps) => {
-  // The timer ticks using a setInterval in the startTimer function at line 157. Here's how it works:
-  // 1. Interval Setup: When startTimer() is called, it creates a setInterval that runs every 1000ms (1 second) at line 157.
-  // 2. Time Decrement Logic: The interval callback (lines 158-199) decrements the time in this order:
-  //    - If seconds > 0: decrement seconds by 1
-  //    - If seconds = 0 and minutes > 0: decrement minutes by 1, set seconds to 59
-  //    - If minutes = 0 and hours > 0: decrement hours by 1, set minutes to 59, seconds to 59
-  //    - If all reach 0: timer completes
-  // 3. Timer Completion: When time reaches 00:00:00, it plays audio and handles different timer modes (one-time, interval, or normal).
-  // 4. Interval Cleanup: The pauseTimer() function at line 202 clears the interval using clearInterval(countDownInterval.current!).
-  // The timer state is managed with useState for the current time and useRef to store the interval reference for proper cleanup.
-
   const [time, setTime] = useState(timer.time)
   const [isRunning, setIsRunning] = useState(false)
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
   const { setTimer } = useGlobalTimer()
 
   const countdownInterval = useRef<NodeJS.Timeout>()
+  const audioRef = useRef<HTMLAudioElement>(new Audio())
 
-  // const navigate=useNavigate()
+  const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   // Audio management - extract to useAudioPlayer hook:
   //   typescript   const { isPlaying, play, pause, setSrc } = useAudioPlayer(timer.file, timer.volume);
   const playAudio = () => {
-    toast.info(<span>DEBUG: playAudio()</span>)
+    audioRef.current.play()
+    audioRef.current.volume = timer?.volume ?? 1 // TEMPORARY FIX
   }
   const pauseAudio = () => {
-    toast.info(<span>DEBUG: pauseAudio()</span>)
+    audioRef.current.pause()
+    setIsAudioPlaying(false)
   }
   const setAudioSrc = () => {
-    toast.info(<span>DEBUG: setAudioSrc()</span>)
+    let audioUrl = ""
+    // TEMPORARY FIX (cmp)
+    if (timer?.file) {
+      audioUrl = typeof timer?.file === "string" ? timer?.file : URL.createObjectURL(timer.file)
+    }
+    audioRef.current.src = audioUrl
   }
 
   const handleRemoveTimer = async () => {
@@ -123,8 +105,12 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
 
   // TODO: Timer countdown logic - startTimer/pauseTimer/resetTimer + interval management → useCountdown hook
   const startTimer = () => {
+    setAudioSrc()
+
     if (isTimeEmpty(time)) setTime(timer.time)
+
     setIsRunning(true)
+
     countdownInterval.current = setInterval(() => {
       setTime((prev) => {
         if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 }
@@ -133,13 +119,9 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
         else {
           const _timer_isOneTime = false
           if (_timer_isOneTime) {
-            ;(async () => {
-              try {
-                await handleRemoveTimer()
-              } catch (err) {
-                console.error("Failed to remove timer", err)
-              }
-            })()
+            handleRemoveTimer().catch((err) => console.error("Failed to remove timer", err))
+            navigate({ to: "/", replace: true }).then((r) => console.log(r))
+            return timer.time
           }
           pauseTimer()
           return prev
@@ -166,7 +148,22 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
   }, [isRunning, onRun])
 
   useEffect(() => {
-    // TODO: for audioRef
+    const audio = audioRef.current
+    const handleEnded = () => {
+      setIsAudioPlaying(false)
+      console.log("HANDLE ENDED")
+    }
+    const handlePlay = () => {
+      setIsAudioPlaying(true)
+    }
+    audio.addEventListener("ended", handleEnded)
+    audio.addEventListener("pause", handleEnded)
+    audio.addEventListener("play", handlePlay)
+    return () => {
+      audio.addEventListener("ended", handleEnded)
+      audio.addEventListener("pause", handleEnded)
+      audio.addEventListener("play", handlePlay)
+    } // cleanup function
   }, [])
 
   const onStartPause = () => {
@@ -178,6 +175,7 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
   }
   const onAudioToggle = () => {
     setAudioSrc()
+
     if (isAudioPlaying) pauseAudio()
     else playAudio()
   }
@@ -291,3 +289,26 @@ export default GlobalTimer
 // The portalNode is the shared reference that connects both components - it's
 // like a TV channel where GlobalTimer broadcasts the timer content and
 // $timerId/index.tsx tunes in to display it.
+
+// type TimerComponentProps
+// 1. Callback Registration: The onRun prop is passed to TimerComponent and called whenever the timer's running state changes (line 220).
+// 2. State Synchronization: When isRunning state changes, onRun?.(isRunning) is called to notify the parent component about the timer's running status.
+// 3. Parent Component Control: In the GlobalTimer component (line 52), setIsRunning from the global timer context is passed as onRun, allowing the context to track when the timer is running.
+// 4. Context Integration: This creates a two-way binding where:
+//    - The timer component controls its own running state
+//    - The global timer context is notified of running state changes
+//    - The context can potentially influence timer behavior based on this information
+// The onRun callback essentially allows the global timer context to stay synchronized with the individual timer's running state, which could be used for features like preventing multiple timers from running simultaneously or providing global timer controls.
+
+// TimerComponent
+//
+// The timer ticks using a setInterval in the startTimer function at line 157. Here's how it works:
+// 1. Interval Setup: When startTimer() is called, it creates a setInterval that runs every 1000ms (1 second) at line 157.
+// 2. Time Decrement Logic: The interval callback (lines 158-199) decrements the time in this order:
+//    - If seconds > 0: decrement seconds by 1
+//    - If seconds = 0 and minutes > 0: decrement minutes by 1, set seconds to 59
+//    - If minutes = 0 and hours > 0: decrement hours by 1, set minutes to 59, seconds to 59
+//    - If all reach 0: timer completes
+// 3. Timer Completion: When time reaches 00:00:00, it plays audio and handles different timer modes (one-time, interval, or normal).
+// 4. Interval Cleanup: The pauseTimer() function at line 202 clears the interval using clearInterval(countDownInterval.current!).
+// The timer state is managed with useState for the current time and useRef to store the interval reference for proper cleanup.

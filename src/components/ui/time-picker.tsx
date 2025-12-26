@@ -7,7 +7,7 @@ import type { Time } from "@/types/core"
 
 export interface TimePickerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
   selected: Time | undefined
-  onChange: (time: React.SetStateAction<Time>) => void
+  onChange: (time: Time) => void
 }
 
 const TimePicker = ({ selected, onChange, className, ...props }: TimePickerProps) => {

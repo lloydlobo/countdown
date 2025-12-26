@@ -10,4 +10,12 @@ export interface Timer {
   name: string
   time: Time
   color: string
+  volume: number // 0..1
+  soundFile: SoundFile
+}
+
+export type SoundFile = {
+  id: string
+  name: string
+  file: File | string
 }

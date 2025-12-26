@@ -1,10 +1,10 @@
-import { useSuspenseQuery } from "@tanstack/react-query"
-import { Link, createFileRoute } from "@tanstack/react-router"
-import { PlusIcon } from "lucide-react"
-
 import TimerCard from "@/components/timer-card"
 import { Button } from "@/components/ui/button"
 import { timersQueryOptions } from "@/queries/timers"
+
+import { useSuspenseQuery } from "@tanstack/react-query"
+import { createFileRoute, Link } from "@tanstack/react-router"
+import { PlusIcon } from "lucide-react"
 
 export const Route = createFileRoute("/")({
   component: Home,

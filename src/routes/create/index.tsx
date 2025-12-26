@@ -1,13 +1,16 @@
-import { useState } from "react"
-
-import NameInput from "@/components/routes/create/name-input"
-import TimePicker from "@/components/routes/create/time-picker"
 import ColorPicker, { existingColors } from "@/components/routes/create/color-picker"
+import NameInput from "@/components/routes/create/name-input"
+import SoundUpload, { defaultSoundFile } from "@/components/routes/create/sound-upload.tsx"
+import SoundVolume from "@/components/routes/create/sound-volume.tsx"
+import TimePicker from "@/components/routes/create/time-picker"
 import { Button } from "@/components/ui/button"
-import type { Time, Timer } from "@/types/core"
+import type { SoundFile, Time, Timer } from "@/types/core"
+import { isTimeEmpty } from "@/utils.ts"
+
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { get, set } from "idb-keyval"
 import { ArrowLeftIcon } from "lucide-react"
+import { useState } from "react"
 import { toast } from "sonner"
 import { v4 as uuidv4 } from "uuid"
 
@@ -19,28 +22,32 @@ function CreateTimer() {
   const [name, setName] = useState("")
   const [time, setTime] = useState<Time | undefined>(undefined)
   const [color, setColor] = useState(existingColors[0])
+  const [volume, setVolume] = useState<number>(1) // 0..1
+  const [soundFile, setSoundFile] = useState<SoundFile>(defaultSoundFile)
 
   const navigate = useNavigate()
 
   const createTimer = async () => {
-    if (!name) {
-      return toast.error("Please enter a name.")
-    }
+    if (!name) return toast.error("Name is required")
+    if (!time || isTimeEmpty(time)) return toast.error("Time must not be empty.")
+    if (!soundFile?.file) return toast.error("Upload a sound file")
 
     const existingTimers = await get("timers") // idb-keyval
 
     const newTimer: Timer = {
       id: uuidv4(),
-      name,
-      time,
-      color,
+      name: name,
+      time: time,
+      color: color,
+      volume: volume,
+      soundFile: soundFile,
     }
 
     await set("timers", [...(existingTimers || []), newTimer]) // idb-keyval
 
     toast.success("Created timer successfully!")
 
-    navigate({ to: "/$timerId", params: { timerId: newTimer.id } })
+    await navigate({ to: "/$timerId", params: { timerId: newTimer.id } })
   }
 
   return (
@@ -65,6 +72,14 @@ function CreateTimer() {
 
       <div>
         <ColorPicker color={color} onChange={setColor} />
+      </div>
+
+      <div>
+        <SoundUpload soundFile={soundFile} onChange={setSoundFile} />
+      </div>
+
+      <div>
+        <SoundVolume volume={volume} onChange={setVolume} />
       </div>
 
       <Button onClick={createTimer}>

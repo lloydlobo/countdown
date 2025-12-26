@@ -1,17 +1,16 @@
-import React from "react"
-import { TimerIcon } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import BaseTimePicker from "@/components/ui/time-picker"
 import { cn } from "@/lib/utils"
-import { formatTime, isTimeEmpty as isTimeEmpty } from "@/utils"
 import type { Time } from "@/types/core"
+import { formatTime, isTimeEmpty as isTimeEmpty } from "@/utils"
+
+import { TimerIcon } from "lucide-react"
 
 interface TimePickerProps {
   selected: Time | undefined
-  onChange: (time: React.SetStateAction<Time>) => void
+  onChange: (time: Time) => void
 }
 
 const TimePicker = ({ selected: time, onChange }: TimePickerProps) => {
