@@ -1,16 +1,32 @@
-import { Link } from "@tanstack/react-router"
-import { Pencil, TrashIcon } from "lucide-react"
-
 import { Button, buttonVariants } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
+import { deleteTimerById } from "@/mutations/timers.ts"
+import { timersQueryOptions } from "@/queries/timers.ts"
 import type { Timer } from "@/types/core"
 import { formatTime } from "@/utils"
+
+import { useQueryClient } from "@tanstack/react-query"
+import { Link } from "@tanstack/react-router"
+import { Pencil, TrashIcon } from "lucide-react"
+import { toast } from "sonner"
 
 interface TimerCardProps {
   timer: Timer
 }
 
 const TimerCard = ({ timer }: TimerCardProps) => {
+  const queryClient = useQueryClient()
+
+  const handleRemoveTimer = async () => {
+    await deleteTimerById(timer.id)
+    toast.success(
+      <span>
+        Successfully deleted <span className="font-semibold">{timer.name}</span>.
+      </span>
+    )
+    await queryClient.invalidateQueries(timersQueryOptions)
+  }
+
   return (
     <div
       className={cn(
@@ -43,7 +59,7 @@ const TimerCard = ({ timer }: TimerCardProps) => {
           </Button>
         </Link>
 
-        <Button variant={"destructive"}>
+        <Button onClick={handleRemoveTimer} variant="destructive">
           <TrashIcon />
         </Button>
       </div>
