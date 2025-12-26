@@ -1,4 +1,5 @@
 import { Button, buttonVariants } from "@/components/ui/button"
+import { useGlobalTimer } from "@/context/global-timer/use-global-timer.ts"
 import { cn } from "@/lib/utils"
 import { deleteTimerById } from "@/mutations/timers.ts"
 import { timersQueryOptions } from "@/queries/timers.ts"
@@ -17,6 +18,8 @@ interface TimerCardProps {
 const TimerCard = ({ timer }: TimerCardProps) => {
   const queryClient = useQueryClient()
 
+  const { setTimer } = useGlobalTimer() // NOTE: The global context holds only one timer - the currently active/running timer.
+
   const handleRemoveTimer = async () => {
     await deleteTimerById(timer.id)
     toast.success(
@@ -24,6 +27,8 @@ const TimerCard = ({ timer }: TimerCardProps) => {
         Successfully deleted <span className="font-semibold">{timer.name}</span>.
       </span>
     )
+
+    setTimer(null)
     await queryClient.invalidateQueries(timersQueryOptions)
   }
 
@@ -68,3 +73,19 @@ const TimerCard = ({ timer }: TimerCardProps) => {
 }
 
 export default TimerCard
+
+/**
+ * TIMER MANAGEMENT FLOW
+ *
+ * Architecture: Single active timer in global context + multiple timer cards from IndexedDB
+ *
+ * Flow: TimerCard click → navigate → setTimer(timer) → GlobalTimer renders TimerComponent
+ *
+ * Bug: TimerCard deletion only cleared IndexedDB, not global context
+ * Fix: TimerCard must call setTimer(null) when deleting active timer
+ *
+ * Key: setTimer establishes correspondence between prop and global state via navigation
+ * Portal: Same TimerComponent teleported between minimized/full contexts
+ *
+ * Note: isMinimized controls visual only, not timer execution
+ */
