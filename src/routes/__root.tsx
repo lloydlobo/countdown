@@ -1,12 +1,13 @@
 import { StrictMode } from "react"
 
-import GlobalTimer from "@/components/global-timer"
-import { ThemeProvider } from "@/components/theme-provider"
-import { GITHUB_URL } from "@/constants"
-import { GlobalTimerProvider } from "@/context/global-timer-context"
 import { QueryClient } from "@tanstack/react-query"
 import { Outlet, createRootRouteWithContext } from "@tanstack/react-router"
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools"
+
+import GlobalTimer from "@/components/global-timer"
+import { ThemeProvider } from "@/components/theme-provider"
+import { GITHUB_URL } from "@/constants"
+import { GlobalTimerProvider } from "@/context/global-timer/global-timer-provider"
 
 type RouterContext = {
   queryClient: QueryClient
@@ -17,7 +18,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 })
 
 function RootComponent() {
-  const Component = () => (
+  const Component = (
     <>
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <GlobalTimerProvider>
@@ -44,13 +45,9 @@ function RootComponent() {
     </>
   )
 
-  return true ? (
-    <Component />
-  ) : (
-    <StrictMode>
-      <Component />
-    </StrictMode>
-  )
+  let isStrictMode = false
+  isStrictMode = typeof window !== "undefined"
+  return isStrictMode ? <StrictMode>{Component}</StrictMode> : Component
 }
 
 // https://github.com/TanStack/router/blob/main/examples/react/quickstart-file-based/src/routes/__root.tsx

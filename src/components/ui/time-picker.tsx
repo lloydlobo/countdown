@@ -7,13 +7,13 @@ import type { Time } from "@/types/core"
 
 export interface TimePickerProps extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
   selected: Time | undefined
-  onChange: (time: Time) => void
+  onChange: (time: React.SetStateAction<Time>) => void
 }
 
 const TimePicker = ({ selected, onChange, className, ...props }: TimePickerProps) => {
   const [time, setTime] = useState<Time>({ hours: 0, minutes: 0, seconds: 0 })
 
-  const handleChange = (t: Partial<Time>) => {
+  const handleChange = (t: React.SetStateAction<Time>) => {
     setTime(t)
     onChange(t)
   }
@@ -31,8 +31,8 @@ const TimePicker = ({ selected, onChange, className, ...props }: TimePickerProps
             min={0}
             max={24}
             step={1}
-            defaultValue={0}
-            onChange={(ev) => handleChange({ ...time, hours: ev.target.value })}
+            defaultValue={selected?.hours ?? 0}
+            onChange={(ev) => handleChange({ ...time, hours: ev.target.valueAsNumber })}
             className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
           />
         </div>
@@ -46,8 +46,8 @@ const TimePicker = ({ selected, onChange, className, ...props }: TimePickerProps
             min={0}
             max={60}
             step={1}
-            defaultValue={0}
-            onChange={(ev) => handleChange({ ...time, minutes: ev.target.value })}
+            defaultValue={selected?.minutes ?? 0}
+            onChange={(ev) => handleChange({ ...time, minutes: ev.target.valueAsNumber })}
             className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
           />
         </div>
@@ -61,8 +61,8 @@ const TimePicker = ({ selected, onChange, className, ...props }: TimePickerProps
             min={0}
             max={60}
             step={1}
-            defaultValue={0}
-            onChange={(ev) => handleChange({ ...time, seconds: ev.target.value })}
+            defaultValue={selected?.seconds ?? 0}
+            onChange={(ev) => handleChange({ ...time, seconds: ev.target.valueAsNumber })}
             className="bg-background appearance-none [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:appearance-none"
           />
         </div>

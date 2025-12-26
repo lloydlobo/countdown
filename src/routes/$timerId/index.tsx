@@ -14,9 +14,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { useGlobalTimer } from "@/context/global-timer-context"
 import { timerQueryOptions } from "@/queries/timer"
 import type { Timer } from "@/types/core"
+import { useGlobalTimer } from "@/context/global-timer/use-global-timer.ts"
 
 export const Route = createFileRoute("/$timerId/")({
   component: TimerPage,

@@ -1,16 +1,16 @@
 import React, { useEffect, useRef, useState } from "react"
 
 import { Link, useRouter } from "@tanstack/react-router"
-import { ArrowLeftIcon, PauseIcon, PencilIcon, PlayIcon, TimerResetIcon } from "lucide-react"
+import { ArrowLeftIcon, MaximizeIcon, PauseIcon, PencilIcon, PlayIcon, TimerResetIcon } from "lucide-react"
 import * as portals from "react-reverse-portal"
 import { toast } from "sonner"
 
-import { Button, buttonVariants } from "@/components/ui/button"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { useGlobalTimer } from "@/context/global-timer-context"
-import { cn } from "@/lib/utils"
-import type { Time, Timer } from "@/types/core"
+import { TooltipButton } from "@/components/ui/tooltip-button.tsx"
+import { Button } from "@/components/ui/button"
+import type { Timer } from "@/types/core"
 import { isTimeEmpty } from "@/utils"
+import { TimeDisplay } from "@/components/ui/time-display.tsx"
+import { useGlobalTimer } from "@/context/global-timer/use-global-timer.ts"
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const portalNode = portals.createHtmlPortalNode<typeof TimerComponent>({
@@ -18,18 +18,19 @@ export const portalNode = portals.createHtmlPortalNode<typeof TimerComponent>({
     class: "w-full h-full min-h-[inherit]",
   },
 })
+
+// 1. Callback Registration: The onRun prop is passed to TimerComponent and called whenever the timer's running state changes (line 220).
+// 2. State Synchronization: When isRunning state changes, onRun?.(isRunning) is called to notify the parent component about the timer's running status.
+// 3. Parent Component Control: In the GlobalTimer component (line 52), setIsRunning from the global timer context is passed as onRun, allowing the context to track when the timer is running.
+// 4. Context Integration: This creates a two-way binding where:
+//    - The timer component controls its own running state
+//    - The global timer context is notified of running state changes
+//    - The context can potentially influence timer behavior based on this information
+// The onRun callback essentially allows the global timer context to stay synchronized with the individual timer's running state, which could be used for features like preventing multiple timers from running simultaneously or providing global timer controls.
 type TimerComponentProps = {
   timer: Timer
   isMinimized?: boolean
-  // 1. Callback Registration: The onRun prop is passed to TimerComponent and called whenever the timer's running state changes (line 220).
-  // 2. State Synchronization: When isRunning state changes, onRun?.(isRunning) is called to notify the parent component about the timer's running status.
-  // 3. Parent Component Control: In the GlobalTimer component (line 52), setIsRunning from the global timer context is passed as onRun, allowing the context to track when the timer is running.
-  // 4. Context Integration: This creates a two-way binding where:
-  //    - The timer component controls its own running state
-  //    - The global timer context is notified of running state changes
-  //    - The context can potentially influence timer behavior based on this information
-  // The onRun callback essentially allows the global timer context to stay synchronized with the individual timer's running state, which could be used for features like preventing multiple timers from running simultaneously or providing global timer controls.
-  onRun: (isRunning: boolean) => void
+  onRun: (isRunning: boolean) => void // useGlobalTimer
 }
 
 const GlobalTimer = () => {
@@ -45,12 +46,10 @@ const GlobalTimer = () => {
     const unsub = router.subscribe("onResolved", (ev) => {
       const href = ev.toLocation.href
       const id = timer?.id
-
       console.trace("resolved", id, href)
 
       setIsMatch(href === `/${id}`)
     })
-
     return unsub
   }, [timer, router])
 
@@ -61,9 +60,7 @@ const GlobalTimer = () => {
 
   return (
     <>
-      <portals.InPortal node={portalNode}>
-        {timer && <TimerComponent timer={timer} onRun={setIsRunning} />}
-      </portals.InPortal>
+      <portals.InPortal node={portalNode}>{timer && <TimerComponent timer={timer} onRun={setIsRunning} />}</portals.InPortal>
 
       {!isMatch && (
         <portals.OutPortal<typeof TimerComponent> // force-line-break
@@ -73,22 +70,6 @@ const GlobalTimer = () => {
       )}
     </>
   )
-}
-
-const TimeDisplay = ({ time }: { time: Time }) => {
-const TimeColon = () => <p className="text-6xl font-bold uppercase tabular-nums md:block md:text-9xl">:</p>
-const TimeChars = ({ children }: { children: React.ReactNode }) => (
-  <p className="text-6xl font-bold uppercase tabular-nums md:text-9xl">{children}</p>
-)
-return (
-  <div className="flex md:flex-row md:items-center md:gap-2">
-    <TimeChars>{time.hours.toString().padStart(2, "0")}</TimeChars>
-    <TimeColon />
-    <TimeChars>{time.minutes.toString().padStart(2, "0")}</TimeChars>
-    <TimeColon />
-    <TimeChars>{time.seconds.toString().padStart(2, "0")}</TimeChars>
-  </div>
-)
 }
 
 // The timer ticks using a setInterval in the startTimer function at line 157. Here's how it works:
@@ -105,78 +86,102 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
   const [time, setTime] = useState(timer.time)
   const [isRunning, setIsRunning] = useState(false)
   const { isAudioPlaying, setIsAudioPlaying } = useState(false)
-  //   const { setTimer } = useGlobalTimer()
+  const { setTimer } = useGlobalTimer()
 
   const countdownInterval = useRef<NodeJS.Timeout>()
 
+  // Audio management - extract to useAudioPlayer hook:
+  //   typescript   const { isPlaying, play, pause, setSrc } = useAudioPlayer(timer.file, timer.volume);
   const playAudio = () => {
     toast.info(<span>DEBUG: playAudio()</span>)
   }
   const pauseAudio = () => {
     toast.info(<span>DEBUG: pauseAudio()</span>)
   }
-  const deleteTimer = () => {
-    toast.info(<span>DEBUG: deleteAudio()</span>)
-  }
   const setAudioSrc = () => {
     toast.info(<span>DEBUG: setAudioSrc()</span>)
   }
 
-  const startTimer = () => {
-    console.assert(!isRunning)
-
-    if (isTimeEmpty(time)) setTime(timer.time)
-    setIsRunning(true)
-    countdownInterval.current=setInterval(()=>{
-        setTime((prev)=>{
-            if (prev.seconds>0){
-                return {...prev,seconds:prev.seconds-1}
-            } else if (prev.minutes>0){
-                return {...prev, minutes:prev.minutes-1,seconds:59}
-            } else if (prev.hours > 0) {
-                return {...prev,hours:prev.hours-1, minutes:59, seconds: 59,}
-            } else {
-                pauseTimer()
-                return prev
-            }
-        })
-    },1000)
+  // TODO: Delete timer - move to @/mutations/timers.ts or similar (it's a side effect, not component logic)
+  const deleteTimer = () => {
+    toast.info(<span>DEBUG: deleteAudio()</span>)
   }
 
+  // TODO: Timer countdown logic - startTimer/pauseTimer/resetTimer + interval management → useCountdown hook
+  const startTimer = () => {
+    if (isTimeEmpty(time)) setTime(timer.time)
+    setIsRunning(true)
+    countdownInterval.current = setInterval(() => {
+      setTime((prev) => {
+        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 }
+        else if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 }
+        else if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 }
+        else {
+          pauseTimer()
+          return prev
+        }
+      })
+    }, 1000)
+  }
   const pauseTimer = () => {
-    console.assert(!isTimeEmpty(time))
-
     setIsRunning(false)
     clearInterval(countdownInterval.current!)
   }
 
   const resetTimer = () => {
-      setTime(timer.time)
-      pauseTimer()
+    setTime(timer.time)
+    pauseTimer()
   }
 
   useEffect(() => {
-      setTime(timer.time)
-      pauseTimer()
+    setTime(timer.time)
+    pauseTimer()
   }, [timer.time])
-
   useEffect(() => {
-      onRun?.(isRunning)
+    onRun?.(isRunning)
   }, [isRunning, onRun])
-
   useEffect(() => {
-      // TODO: for audioRef
+    // TODO: for audioRef
   }, [])
+
+  const onStartPause = () => {
+    if (isRunning) pauseTimer()
+    else startTimer()
+  }
+  const onReset = () => {
+    resetTimer()
+  }
+  const onAudioToggle = () => {
+    setAudioSrc()
+    if (isAudioPlaying) pauseAudio()
+    else playAudio()
+  }
 
   if (isMinimized) {
     return (
-      <>
-        <div className="flex">
-          <p>
-            <pre>[TimerComponent] isMinimized: {isMinimized ? "true" : "false"}</pre>
-          </p>
+      <div className="bg-secondary fixed top-0 right-0 flex flex-wrap items-center justify-center gap-4 rounded-md px-4 py-2 sm:top-auto sm:right-4 sm:bottom-4 sm:gap-8">
+        <TimeDisplay time={time} size="minimized" />
+        {/* Controls */}
+        <div className="flex items-center gap-2">
+          <TooltipButton icon={isRunning ? PauseIcon : PlayIcon} tooltip={isRunning ? "Pause timer" : "Start timer"} onClick={onStartPause} className="py-4" />
+          <div className="flex items-center gap-2">
+            <TooltipButton icon={TimerResetIcon} tooltip="Reset the timer" onClick={onReset} variant="outline" className="grow py-4" />
+            <Link to="/$timerId/edit" params={{ timerId: timer.id }}>
+              <TooltipButton icon={PencilIcon} tooltip="Edit the timer" variant="outline" className="grow py-4" />
+            </Link>
+            <Link to="/$timerId" params={{ timerId: timer.id }}>
+              <TooltipButton icon={MaximizeIcon} tooltip="Open the timer" variant="outline" className="grow py-4" />
+            </Link>
+            <TooltipButton
+              icon={isAudioPlaying ? PauseIcon : PlayIcon}
+              tooltip={isAudioPlaying ? "Pause sound" : "Play sound"}
+              onClick={onAudioToggle}
+              variant="destructive"
+              className="grow py-4"
+            />
+          </div>
         </div>
-      </>
+      </div>
     )
   }
 
@@ -185,7 +190,6 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
       <Link to="/">
         <Button variant="ghost" className="absolute top-4 left-4 flex items-center md:top-16 md:left-4">
           <ArrowLeftIcon className="mr-2 h-6 w-6 shrink-8" />
-
           <p className="text-xl">Go back</p>
         </Button>
       </Link>
@@ -195,81 +199,28 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
           {timer.name}
         </p>
       </div>
-
-      <TimeDisplay time={timer.time} />
-
+      <TimeDisplay time={time} />
+      {/*Controls*/}
       <div className="mt-8 flex flex-col gap-2 md:flex-row">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger
-              onClick={() => (isRunning ? pauseTimer : startTimer)()}
-              className={cn(buttonVariants({ className: "py-4", variant: "default" }))}
-            >
-              <div className="flex items-center">
-                {isRunning ? (
-                  <>
-                    <PauseIcon className="mr-3 h-5 w-5" />
-
-                    <p className="text-base font-semibold uppercase">Pause</p>
-                  </>
-                ) : (
-                  <>
-                    <PlayIcon className="mr-3 h-5 w-5" />
-
-                    <p className="text-base font-semibold uppercase">Start</p>
-                  </>
-                )}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent className="bg-secondary">
-              {isRunning ? "Pause the timer" : "Start the timer"}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
+        <TooltipButton
+          icon={isRunning ? PauseIcon : PlayIcon}
+          label={isRunning ? "Pause" : "Start"}
+          tooltip={isRunning ? "Pause timer" : "Start timer"}
+          onClick={onStartPause}
+          className="py-4"
+        />
         <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger
-                className={cn(buttonVariants({ variant: "secondary", className: "grow py-4" }))}
-                onClick={resetTimer}
-              >
-                <TimerResetIcon className="h-5 w-5" />
-              </TooltipTrigger>
-              <TooltipContent className="bg-secondary">Reset the timer</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-
+          <TooltipButton icon={TimerResetIcon} tooltip="Reset the timer" onClick={onReset} variant="secondary" className="grow py-4" />
           <Link to="/$timerId/edit" params={{ timerId: timer.id }} className="block">
-            <TooltipProvider>
-              <Tooltip>
-                {/* NOTE: Disabled h-full for even icon for all providers */}
-                <TooltipTrigger
-                  className={cn(buttonVariants({ variant: "secondary", className: "h-full~ grow py-4" }))}
-                >
-                  <PencilIcon className="h-5 w-5" />
-                </TooltipTrigger>
-                <TooltipContent className="bg-secondary">Edit the timer</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <TooltipButton icon={PencilIcon} tooltip="Edit the timer" variant="secondary" className="grow py-4" />
           </Link>
-
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger
-                onClick={() => {
-                  setAudioSrc()
-                  isAudioPlaying ? pauseAudio() : playAudio()
-                }}
-                className={cn(buttonVariants({ variant: "destructive", className: "grow py-4" }))}
-              >
-                {isAudioPlaying ? <PauseIcon className="h-5 w-5" /> : <PlayIcon className="h-5 w-5" />}
-              </TooltipTrigger>
-              <TooltipContent className="bg-secondary">
-                {isAudioPlaying ? "Pause the sound" : "Play the sound"}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <TooltipButton
+            icon={isAudioPlaying ? PauseIcon : PlayIcon}
+            tooltip={isAudioPlaying ? "Pause sound" : "Play sound"}
+            onClick={onAudioToggle}
+            variant="destructive"
+            className="grow py-4"
+          />
         </div>
       </div>
     </div>
