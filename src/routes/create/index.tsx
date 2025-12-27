@@ -1,4 +1,5 @@
 import ColorPicker, { existingColors } from "@/components/routes/create/color-picker"
+import IntervalSwitch from "@/components/routes/create/interval-switch"
 import NameInput from "@/components/routes/create/name-input"
 import OneTimeSwitch from "@/components/routes/create/one-time-switch.tsx"
 import SoundUpload, { defaultSoundFile } from "@/components/routes/create/sound-upload.tsx"
@@ -87,7 +88,9 @@ function CreateTimer() {
         <SoundVolume volume={volume} onChange={setVolume} />
       </div>
 
-      <div></div>
+      <div>
+        <IntervalSwitch isInterval={isInterval} onChange={setIsInterval} disabled={isOneTime} />
+      </div>
 
       <div>
         <OneTimeSwitch isOneTime={isOneTime} onChange={setIsOneTime} disabled={isInterval} />
