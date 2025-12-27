@@ -1,3 +1,4 @@
+import AddSound from "@/components/routes/create/add-sound.tsx"
 import { Button } from "@/components/ui/button.tsx"
 import { Label } from "@/components/ui/label.tsx"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -86,6 +87,8 @@ const SoundUpload = ({ soundFile, onChange }: SoundUploadProps) => {
           </SelectContent>
         </Select>
       </div>
+
+      <AddSound onOpenChange={(open) => setIsDialogOpen(open)} open={isDialogOpen} onSoundAdded={onChange} />
     </>
   )
 }
