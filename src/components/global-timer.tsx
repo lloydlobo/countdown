@@ -6,8 +6,8 @@ import { deleteTimerById } from "@/mutations/timers.ts"
 import { timersQueryOptions } from "@/queries/timers.ts"
 import type { Timer } from "@/types/core"
 import { isTimeEmpty } from "@/utils"
-import { useQueryClient } from "@tanstack/react-query"
 
+import { useQueryClient } from "@tanstack/react-query"
 import { Link, useNavigate, useRouter } from "@tanstack/react-router"
 import { ArrowLeftIcon, MaximizeIcon, PauseIcon, PencilIcon, PlayIcon, TimerResetIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
@@ -61,6 +61,8 @@ const GlobalTimer = () => {
   )
 }
 
+// FIXME: Cannot update a component (`Transitioner`) while rendering a different component (`TimerComponent`). To locate the bad setState() call inside `TimerComponent`, follow the stack trace as described in
+//        CONTEXT: Deletion of `isOneTime` enabled timer both in minimized mode and full mode
 export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerComponentProps) => {
   const [time, setTime] = useState(timer.time)
   const [isRunning, setIsRunning] = useState(false)
@@ -117,16 +119,14 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
         else if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 }
         else if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 }
         else {
-          const _timer_isOneTime = false
-          const _timer_isInterval = false
           audioRef.current.currentTime = 0
           playAudio()
-          if (_timer_isOneTime) {
+          if (timer.isOneTime) {
             handleRemoveTimer().catch((err) => console.error("Failed to remove timer", err))
             navigate({ to: "/", replace: true }).then((r) => console.log(r))
             return timer.time
           }
-          if (_timer_isInterval) {
+          if (timer.isInterval) {
             return timer.time
           }
           pauseTimer()
@@ -181,7 +181,6 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
   }
   const onAudioToggle = () => {
     setAudioSrc()
-
     if (isAudioPlaying) pauseAudio()
     else playAudio()
   }

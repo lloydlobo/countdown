@@ -12,6 +12,8 @@ export interface Timer {
   color: string
   volume: number // 0..1
   soundFile: SoundFile
+  isInterval: boolean
+  isOneTime: boolean
 }
 
 export type SoundFile = {

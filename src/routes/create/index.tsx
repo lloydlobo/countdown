@@ -1,5 +1,6 @@
 import ColorPicker, { existingColors } from "@/components/routes/create/color-picker"
 import NameInput from "@/components/routes/create/name-input"
+import OneTimeSwitch from "@/components/routes/create/one-time-switch.tsx"
 import SoundUpload, { defaultSoundFile } from "@/components/routes/create/sound-upload.tsx"
 import SoundVolume from "@/components/routes/create/sound-volume.tsx"
 import TimePicker from "@/components/routes/create/time-picker"
@@ -10,7 +11,7 @@ import { isTimeEmpty } from "@/utils.ts"
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { get, set } from "idb-keyval"
 import { ArrowLeftIcon } from "lucide-react"
-import { useState } from "react"
+import React, { useState } from "react"
 import { toast } from "sonner"
 import { v4 as uuidv4 } from "uuid"
 
@@ -19,11 +20,13 @@ export const Route = createFileRoute("/create/")({
 })
 
 function CreateTimer() {
-  const [name, setName] = useState("")
+  const [name, setName] = useState<string>("")
   const [time, setTime] = useState<Time | undefined>(undefined)
   const [color, setColor] = useState(existingColors[0])
   const [volume, setVolume] = useState<number>(1) // 0..1
   const [soundFile, setSoundFile] = useState<SoundFile>(defaultSoundFile)
+  const [isInterval, setIsInterval] = useState<boolean>(false)
+  const [isOneTime, setIsOneTime] = useState<boolean>(false)
 
   const navigate = useNavigate()
 
@@ -41,6 +44,8 @@ function CreateTimer() {
       color: color,
       volume: volume,
       soundFile: soundFile,
+      isInterval: isInterval,
+      isOneTime: isOneTime,
     }
 
     await set("timers", [...(existingTimers || []), newTimer]) // idb-keyval
@@ -80,6 +85,12 @@ function CreateTimer() {
 
       <div>
         <SoundVolume volume={volume} onChange={setVolume} />
+      </div>
+
+      <div></div>
+
+      <div>
+        <OneTimeSwitch isOneTime={isOneTime} onChange={setIsOneTime} disabled={isInterval} />
       </div>
 
       <Button onClick={createTimer}>

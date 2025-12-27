@@ -18,8 +18,8 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 })
 
 function RootComponent() {
-  const Component = (
-    <>
+  return (
+    <StrictMode>
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <GlobalTimerProvider>
           <div className="container">
@@ -42,12 +42,8 @@ function RootComponent() {
       </ThemeProvider>
 
       <TanStackRouterDevtools position="bottom-right" />
-    </>
+    </StrictMode>
   )
-
-  let isStrictMode = false
-  isStrictMode = typeof window !== "undefined"
-  return isStrictMode ? <StrictMode>{Component}</StrictMode> : Component
 }
 
 // https://github.com/TanStack/router/blob/main/examples/react/quickstart-file-based/src/routes/__root.tsx
