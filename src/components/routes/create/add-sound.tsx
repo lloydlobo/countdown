@@ -57,7 +57,7 @@ const AddSound: React.FC<AddSoundProps> = ({ onSoundAdded, open, onOpenChange, .
 
     toast.success("Sound file created")
 
-    queryClient.invalidateQueries(soundFilesOptions)
+    await queryClient.invalidateQueries(soundFilesOptions)
   }
 
   return (

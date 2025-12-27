@@ -1,4 +1,4 @@
-import type { Time } from "@/types/core"
+import type { SoundFile, Time } from "@/types/core"
 
 export function isTimeEmpty(time: Time) {
   return time.hours === 0 && time.minutes === 0 && time.seconds === 0
@@ -33,3 +33,12 @@ export function formatTime(time: Time) {
   result += `${minutes}:${seconds}`
   return result
 }
+
+const defaultSound = new URL("@/assets/default-alarm.m4a", import.meta.url).href
+export const defaultSoundFile: SoundFile = {
+  id: "default",
+  name: "Default notification sound",
+  file: defaultSound,
+}
+
+export const existingColors = ["#FF5733", "#33FF57", "#5733FF", "#FF33F6", "#33FFF6", "#FF8833"]

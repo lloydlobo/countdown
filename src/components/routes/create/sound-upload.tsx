@@ -4,23 +4,17 @@ import { Label } from "@/components/ui/label.tsx"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import soundFilesOptions from "@/queries/sound-files.ts"
 import type { SoundFile } from "@/types/core"
+import { defaultSoundFile } from "@/utils.ts"
 
 import { useQuery, useQueryClient } from "@tanstack/react-query"
-import { Loader2Icon, PlayIcon, PlusIcon, TrashIcon } from "lucide-react"
+import { get, set } from "idb-keyval"
+import { Loader2Icon, PauseIcon, PlayIcon, PlusIcon, TrashIcon } from "lucide-react"
 import React from "react"
 import { toast } from "sonner"
 
 type SoundUploadProps = {
   soundFile: SoundFile
   onChange: React.Dispatch<React.SetStateAction<SoundFile>>
-}
-
-const defaultSound = new URL("@/assets/default-alarm.m4a", import.meta.url).href
-
-export const defaultSoundFile: SoundFile = {
-  id: "default",
-  name: "Default notification sound",
-  file: defaultSound,
 }
 
 const SoundUpload = ({ soundFile, onChange }: SoundUploadProps) => {
@@ -65,22 +59,16 @@ const SoundUpload = ({ soundFile, onChange }: SoundUploadProps) => {
             ) : (
               <>
                 <SongItem soundFile={defaultSoundFile} />
-
                 {data?.map((file) => (
                   <SongItem soundFile={file} key={file.id} />
                 ))}
-
                 <Button
-                  onClick={() => {
-                    setIsDialogOpen(true)
-                  }}
+                  onClick={() => setIsDialogOpen(true)}
                   className="mt-2 w-full justify-start px-1.5"
                   variant="ghost"
                 >
                   <PlusIcon className="h-4 w-4" />
-                  <p className="ml-2 hidden text-sm sm:block">
-                    <span>[TODO] </span>Add sound
-                  </p>
+                  <p className="ml-2 hidden text-sm sm:block">Add sound</p>
                 </Button>
               </>
             )}
@@ -105,26 +93,19 @@ const SongItem: React.FC<{ soundFile: SoundFile }> = ({ soundFile }) => {
     }
 
     let audioUrl = null
-
     if (soundFile.file instanceof File) {
       audioUrl = URL.createObjectURL(soundFile.file)
     } else if (typeof soundFile.file === "string") {
       audioUrl = soundFile.file
     }
-
-    if (!audioUrl) {
-      return
-    }
+    if (!audioUrl) return
 
     audioRef.current.src = audioUrl
-
     audioRef.current.play()
   }
 
   const stopSound = () => {
-    if (!audioRef.current) {
-      return
-    }
+    if (!audioRef.current) return
 
     audioRef.current.pause()
     audioRef.current.currentTime = 0
@@ -133,20 +114,17 @@ const SongItem: React.FC<{ soundFile: SoundFile }> = ({ soundFile }) => {
   const deleteSoundFile = async () => {
     if (soundFile.id === "default") {
       toast.error("Cannot delete default sound file")
-
       return
     }
 
     const existingSoundFiles = ((await get("soundFiles")) || []) as SoundFile[]
-
     await set(
       "soundFiles",
       existingSoundFiles.filter((file) => file.id !== soundFile.id)
     )
-
     toast.success("Sound file deleted")
 
-    queryClient.invalidateQueries(soundFilesOptions)
+    await queryClient.invalidateQueries(soundFilesOptions)
   }
 
   React.useEffect(() => {

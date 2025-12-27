@@ -1,10 +1,10 @@
+import { portalNode } from "@/components/portal-node.tsx"
 import { useEffect } from "react"
 
 import { useSuspenseQuery } from "@tanstack/react-query"
 import { createFileRoute, Link } from "@tanstack/react-router"
 import * as portals from "react-reverse-portal"
 
-import { portalNode } from "@/components/global-timer"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
