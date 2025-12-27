@@ -28,7 +28,7 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
   const { setTimer } = useGlobalTimer()
 
-  const countdownInterval = useRef<NodeJS.Timeout>()
+  const countdownInterval = useRef<NodeJS.Timeout | undefined>(undefined) // NOTE: Edit tsconfig.app.json and add "node" to the types array
   const audioRef = useRef<HTMLAudioElement>(new Audio())
 
   const navigate = useNavigate()
@@ -37,7 +37,7 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
   // Audio management - extract to useAudioPlayer hook:
   //   typescript   const { isPlaying, play, pause, setSrc } = useAudioPlayer(timer.file, timer.volume);
   const playAudio = () => {
-    audioRef.current.play()
+    audioRef.current.play().then(() => {})
     audioRef.current.volume = timer.volume
   }
   const pauseAudio = () => {
@@ -109,6 +109,7 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTime(timer.time)
     pauseTimer()
   }, [timer.time])
