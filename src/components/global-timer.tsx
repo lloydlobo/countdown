@@ -77,19 +77,17 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
   //   typescript   const { isPlaying, play, pause, setSrc } = useAudioPlayer(timer.file, timer.volume);
   const playAudio = () => {
     audioRef.current.play()
-    audioRef.current.volume = timer?.volume ?? 1 // TEMPORARY FIX
+    audioRef.current.volume = timer.volume
   }
   const pauseAudio = () => {
     audioRef.current.pause()
     setIsAudioPlaying(false)
   }
   const setAudioSrc = () => {
-    let audioUrl = ""
-    // TEMPORARY FIX (cmp)
-    if (timer?.file) {
-      audioUrl = typeof timer?.file === "string" ? timer?.file : URL.createObjectURL(timer.file)
-    }
-    audioRef.current.src = audioUrl
+    // Because the browser will not load this audio when the tab is inactive
+    // We have the load the audio first so that it can be played
+    const file = timer.soundFile.file
+    audioRef.current.src = typeof file === "string" ? file : URL.createObjectURL(file)
   }
 
   const handleRemoveTimer = async () => {
@@ -107,7 +105,9 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
   const startTimer = () => {
     setAudioSrc()
 
-    if (isTimeEmpty(time)) setTime(timer.time)
+    if (isTimeEmpty(time)) {
+      setTime(timer.time)
+    }
 
     setIsRunning(true)
 
@@ -118,9 +118,15 @@ export const TimerComponent = ({ timer, isMinimized = false, onRun }: TimerCompo
         else if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 }
         else {
           const _timer_isOneTime = false
+          const _timer_isInterval = false
+          audioRef.current.currentTime = 0
+          playAudio()
           if (_timer_isOneTime) {
             handleRemoveTimer().catch((err) => console.error("Failed to remove timer", err))
             navigate({ to: "/", replace: true }).then((r) => console.log(r))
+            return timer.time
+          }
+          if (_timer_isInterval) {
             return timer.time
           }
           pauseTimer()
