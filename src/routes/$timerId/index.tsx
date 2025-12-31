@@ -23,13 +23,11 @@ export const Route = createFileRoute("/$timerId/")({
   loader: async ({ context, params }) => {
     const data = await context.queryClient.ensureQueryData(timerQueryOptions(params.timerId))
     if (!data) throw new Error("Timer not found")
-
     return data
   },
   errorComponent: () => (
     <div className="flex h-full min-h-[inherit] w-full flex-col items-center justify-center">
-      <p className="font-semibod text-6xl">Timer not found</p>
-
+      <p className="font-semibold text-6xl">Timer not found</p>
       <Link to="/">
         <Button className="mt-8">
           <p className="text-xl font-semibold">Go back</p>

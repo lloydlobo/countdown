@@ -36,7 +36,7 @@ function CreateTimer() {
     if (!time || isTimeEmpty(time)) return toast.error("Time must not be empty.")
     if (!soundFile?.file) return toast.error("Upload a sound file")
 
-    const existingTimers = await get("timers") // idb-keyval
+    const existingTimers = (await get("timers")) as Timer[] // idb-keyval
 
     const newTimer: Timer = {
       id: uuidv4(),
@@ -61,7 +61,6 @@ function CreateTimer() {
       <Link to="/">
         <Button variant="secondary" className="flex items-center">
           <ArrowLeftIcon className="mr-2 h-6 w-6 shrink-0" />
-
           <p className="text-xl~ text-lg">Go back</p>
         </Button>
       </Link>
