@@ -54,23 +54,38 @@ function EditTimerComponent() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
+  // Ensure that if the IndexedDB write takes 200ms, the user can't spam the
+  // "Edit" button and trigger multiple
+  // navigations.
+  const [isSaving, setIsSaving] = useState<boolean>(false)
+
   const editTimer = async () => {
     if (!name) return toast.error("Name is required")
     if (!time || isTimeEmpty(time)) return toast.error("Time must not be empty.")
     if (!soundFile?.file) return toast.error("Upload a sound file")
 
-    const existingTimers = (await get("timers")) as Timer[]
-    const existingTimer = existingTimers.find((existingTimer) => existingTimer.id === timer.id)
-    if (!existingTimer) return toast.error("Timer not found")
+    setIsSaving(true)
 
-    // NOTE: Update existingTimer by reference, i.e., it is a pointer to the exact same memory location as the object inside the existingTimers array.
-    Object.assign(existingTimer, { name, time, color, volume, soundFile, isInterval, isOneTime })
+    try {
+      const existingTimers = (await get("timers")) as Timer[]
+      const existingTimer = existingTimers.find((existingTimer) => existingTimer.id === timer.id)
+      if (!existingTimer) return toast.error("Timer not found")
 
-    await set("timers", existingTimers)
+      // NOTE: Update existingTimer by reference, i.e., it is a pointer to the
+      // exact same memory location as the object inside the existingTimers array.
+      Object.assign(existingTimer, { name, time, color, volume, soundFile, isInterval, isOneTime })
 
-    await queryClient.invalidateQueries(timerQueryOptions(existingTimer.id))
-    toast.success("Edited timer successfully!")
-    await navigate({ to: "/$timerId", params: { timerId: existingTimer.id } })
+      await set("timers", existingTimers)
+
+      await queryClient.invalidateQueries(timerQueryOptions(existingTimer.id))
+      toast.success("Edited timer successfully!")
+      await navigate({ to: "/$timerId", params: { timerId: existingTimer.id } })
+    } catch (err) {
+      toast.error("Failed to save changes")
+      console.error(err)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return (
@@ -112,8 +127,8 @@ function EditTimerComponent() {
         <OneTimeSwitch isOneTime={isOneTime} onChange={setIsOneTime} disabled={isInterval} />
       </div>
 
-      <Button onClick={editTimer}>
-        <p className="text-base font-semibold">Edit</p>
+      <Button onClick={editTimer} disabled={isSaving}>
+        <p className="text-base font-semibold">{isSaving ? "Saving..." : "Edit"}</p>
       </Button>
     </div>
   )
